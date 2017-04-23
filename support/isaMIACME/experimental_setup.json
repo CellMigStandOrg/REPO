@@ -1,0 +1,1 @@
+{"0001 Assay":{"is-required":"true","is-multiple-value":"true","list-values":"single cell migration, collective cell migration, developmental assay, immune response, chemotaxic, microfluidic, wound-healing, spheroid","is-hidden":"false","is-file-field":"false","description":"Type of assay","is-forced-ontology":"false","data-type":"List","header":"Assay"}}

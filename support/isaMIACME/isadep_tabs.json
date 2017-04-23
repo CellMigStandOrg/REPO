@@ -1,0 +1,8 @@
+{
+   "06 Export" : "SUBMIT",
+   "05 Deposit" : "SUBMIT",
+   "03 Imaging Condition" : "imaging_condition.json",
+   "02 Experimental Setup" : "experimental_setup.json",
+   "Message" : "To deposit data, please complete the mandatory fields and click the <span class='btn btn-success' disabled>Deposit</span> button, or <span class='btn btn-success' disabled>Export</span> in ISA-Tab format.",
+   "01 Investigation" : "investigation.json"
+}
