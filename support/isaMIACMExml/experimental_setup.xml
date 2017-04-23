@@ -1,0 +1,13 @@
+<isatab-config-file xmlns="http://www.ebi.ac.uk/bii/isatab_configuration#">
+<isatab-configuration table-name="experimental setup">
+<technology term-label="" term-accession="" source-abbreviation=""/>
+
+<field header="Assay" data-type="List" is-file-field="false" is-multiple-value="true" 
+is-required="true" is-hidden="false" is-forced-ontology="false">
+<description><![CDATA[Type of assay]]></description>
+<default-value><![CDATA[]]></default-value>
+<list-values>single cell migration, collective cell migration, developmental assay, immune response, chemotaxic, microfluidic, wound-healing, spheroid</list-values>
+</field>
+
+</isatab-configuration>
+</isatab-config-file>
