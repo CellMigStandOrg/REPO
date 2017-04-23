@@ -1,1 +1,108 @@
-/services/repo/tools/isaXMLtoJSON
+#!/usr/bin/env perl
+my $VERSION = "1.08"; my $AUTHOR="Prilusky"; my $YEAR="2017";
+$!++;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use File::Basename;
+use File::Path;
+use File::Spec;
+use Utils;
+use XML::Parser;
+use JSON; # imports encode_json, decode_json, to_json and from_json
+use YAML::XS; # $ref = YAML::XS::LoadFile($f) YAML::XS::DumpFile($f,$ref) YAML::XS::Dump($ref)
+
+  my $binD = $FindBin::Bin; 
+  my $rotD = dirname($binD); 
+  my $supD = File::Spec->catfile($rotD,"support"); 
+  my $xmlD = File::Spec->catfile($supD,"isaMIACMExml");
+  my $jsnD = File::Spec->catfile($supD,"isaMIACME");
+  my(%Y,%T,$tag,$tableName,$curHeader,$hedNum);
+  scanDir($xmlD,$jsnD);
+
+sub doConvert {
+  my($xmlF,$jsonF)=@_; 
+  my $data = Utils::loadFromFile($xmlF); $data =~ s/\s+/ /g;
+  (my $tableName) = $data =~ /isatab-configuration table-name="([\w\_]+)"/;
+  dolog("Parsing $tableName ..."); 
+  $hedNum = $curHeader = undef;
+  my $parser = XML::Parser->new();
+  $parser->setHandlers (
+    Start => \&Start_handler,
+    Char => \&Char_handler,
+    End => \&End_handler,
+    Default => \&Default_handler
+  );
+  %Y=();%T=();
+  $parser->parsefile($xmlF);
+  fixConfigurationConstraints(\%Y);
+#  print YAML::XS::Dump(\%Y);
+  my $json = JSON->new->allow_nonref;
+#  my $pretty_printed = $json->pretty->encode(\%Y ); # pretty-printing
+  my $json_text   = encode_json( \%Y );
+  Utils::saveToFile($json_text,$jsonF);
+  return;
+}
+
+sub Start_handler {
+  my $p  = shift;
+  my $el = shift;
+  $tag = $el; 
+  while (my $key = shift) {
+    my $val = shift;
+    $T{$tag}{$key} = $val;
+  }
+  return;
+}
+
+sub Char_handler {
+  my ($p,$el) = @_;
+  if ($el !~ /^ *$/) { $T{$tag} = $el }
+  return;
+}
+
+sub End_handler {
+  my ($p,$el) = @_;
+  my $header = $T{'field'}{'header'} || $curHeader;
+  if ($curHeader ne $header) { $curHeader = $header; $hedNum = sprintf("%04d",++$hedNum); }
+  foreach my $tag (sort keys %T) {
+    if (ref $T{$tag}) {
+      foreach my $k (sort keys %{$T{'field'}}) {
+        $Y{"$hedNum $header"}{$k} = $T{$tag}{$k};
+      }
+    } else {
+      $Y{"$hedNum $header"}{$tag} = $T{$tag};
+    }
+  }
+  %T=();
+  return;
+}
+
+sub Default_handler {
+  my ($p,$str) = @_;
+#  print "  default handler found '$str'\n";
+  return;
+}
+
+sub scanDir {
+  my($xmlD,$jsnD)=@_;
+  foreach my $xmlF (glob("$xmlD/*")) {
+    (my $jsonF = $xmlF) =~ s/\.xml$/\.json/; 
+    $jsonF = File::Spec->catfile($jsnD,basename($jsonF));  # unlink($jsonF);
+    my $ageXmlF = -M $xmlF; 
+    my $ageYmlF = -M $jsonF; $ageYmlF ||= 999999;
+    if ($ageXmlF <  $ageYmlF) { doConvert($xmlF,$jsonF) }
+  }
+  return;
+}
+
+sub fixConfigurationConstraints {
+  my($Y)=@_;
+  foreach my $k (sort keys %{$Y}) {
+    if ($k =~ /\bEmail\b/) {
+      $$Y{$k}{'data-type'} = 'Email';
+    } elsif ($k =~ /Mid Initials/) {
+      $$Y{$k}{'is-required'} = 'false';
+    }
+  }
+  return;
+}
